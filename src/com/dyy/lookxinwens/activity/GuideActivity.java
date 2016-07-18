@@ -3,12 +3,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.dyy.lookxinwens.R;
+import com.dyy.lookxinwens.utils.DensityUtil;
 import com.dyy.lookxinwens.utils.MyConstants;
 import com.dyy.lookxinwens.utils.SpTools;
 
+import android.widget.LinearLayout.LayoutParams;
 import android.app.Activity;
 import android.content.Intent;
-import android.media.Image;
 import android.os.Bundle;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
@@ -16,9 +17,12 @@ import android.support.v4.view.ViewPager.OnPageChangeListener;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
+import android.widget.Toast;
 
 /** * 
  @author  作者 :dyy
@@ -33,6 +37,7 @@ public class GuideActivity extends Activity {
 	private View v_redpoint;
 	private int[] pics;
 	private Button bt_startExp;
+	private int disPoint;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -49,6 +54,18 @@ public class GuideActivity extends Activity {
 
 	@SuppressWarnings("deprecation")
 	private void initEvent() {
+		
+     v_redpoint.getViewTreeObserver().addOnGlobalLayoutListener(new OnGlobalLayoutListener() {
+		
+
+		@Override
+		public void onGlobalLayout() {
+			
+			v_redpoint.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+			disPoint = ll_points.getChildAt(1).getLeft()-ll_points.getChildAt(0).getLeft();
+			
+		}
+	});
 		
 		
 		bt_startExp.setOnClickListener(new OnClickListener() {
@@ -82,11 +99,28 @@ public class GuideActivity extends Activity {
 				
 			}
 			
+			//在页面滑动过程中触发的事件
+			/*
+			 * (non-Javadoc)
+			 * @see android.support.v4.view.ViewPager.OnPageChangeListener#onPageScrolled(int, float, int)
+			   position 当前ViewPager停留的位置
+			   positionOffset 偏移的比例值
+			   positionOffsetPixels 偏移的像素
+			 */
+			//计算红点的左边距
 			@Override
 			public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-				// TODO Auto-generated method stub
 				
+			/*	int leftMargin=Math.round(disPoint*positionOffset);
+			  RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) v_redpoint.getLayoutParams();
+			  layoutParams.leftMargin=leftMargin;
+			  v_redpoint.setLayoutParams(layoutParams);*/
+				float leftMargin=disPoint*(position+positionOffset);
+				RelativeLayout.LayoutParams layoutParams=(android.widget.RelativeLayout.LayoutParams) v_redpoint.getLayoutParams();
+			    layoutParams.leftMargin=Math.round(leftMargin);
+			    v_redpoint.setLayoutParams(layoutParams);
 			}
+			
 			
 			@Override
 			public void onPageScrollStateChanged(int state) {
@@ -104,10 +138,26 @@ public class GuideActivity extends Activity {
 	
 	for (int i = 0; i < pics.length; i++) {
 		
-		ImageView view=new ImageView(this);
-		view.setBackgroundResource(pics[i]);
+		ImageView iv_temp=new ImageView(this);
+		iv_temp.setBackgroundResource(pics[i]);
 		//添加界面的数据
-		guids.add(view);
+		guids.add(iv_temp);
+		
+		
+		//给点Liearlayout初始化添加灰色点
+		View v_point =new View(getApplicationContext());		
+		v_point.setBackgroundResource(R.drawable.gray_point);
+		//设置灰色点的大小,单位是dp不是dip,把10dip转化成10dp
+		int dip=10;
+		LayoutParams params=new LayoutParams(DensityUtil.dip2px(this, dip), DensityUtil.dip2px(this, dip));
+		 //设置点与点之间的空隙，单位Px
+		//第一个点不需要指定	
+		if (i!=0) 
+		params.leftMargin=10;	
+	    v_point.setLayoutParams(params);
+	   
+		ll_points.addView(v_point);
+        
 	}
 	MyAdapter adapter=new MyAdapter();
 	vp_guids.setAdapter(adapter);
@@ -152,7 +202,7 @@ public class GuideActivity extends Activity {
 	
 	ll_points = (LinearLayout) findViewById(R.id.ll_guide_point);
 	
-	v_redpoint = findViewById(R.id.iv_splash_mainview);	
+	v_redpoint = findViewById(R.id.v_guide_redpoint);	
 	
 	bt_startExp = (Button) findViewById(R.id.bt_guide_startexp);
 	}
